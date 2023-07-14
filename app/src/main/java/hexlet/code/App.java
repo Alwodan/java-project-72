@@ -16,7 +16,9 @@ public class App {
 
     public static Javalin getApp() {
         Javalin app = Javalin.create(javalinConfig -> {
-            javalinConfig.plugins.enableDevLogging();
+            if (!isProduction()) {
+                javalinConfig.plugins.enableDevLogging();
+            }
         });
 
         addRoutes(app);
@@ -26,6 +28,14 @@ public class App {
         });
 
         return app;
+    }
+
+    private static boolean isProduction() {
+        return getMode().equals("production");
+    }
+
+    private static String getMode() {
+        return System.getenv().getOrDefault("APP_ENV", "development");
     }
 
     private static int getPort() {
