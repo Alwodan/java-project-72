@@ -13,7 +13,7 @@ run-dist:
 	./build/install/app/bin/app
 
 run:
-	./gradlew run
+	APP_ENV=development ./gradlew run
 
 test:
 	./gradlew test

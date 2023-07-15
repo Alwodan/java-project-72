@@ -9,6 +9,8 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.extras.java8time.dialect.Java8TimeDialect;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
+import static io.javalin.apibuilder.ApiBuilder.*;
+
 public class App {
     public static void main(String[] args) {
         Javalin app = getApp();
@@ -17,8 +19,16 @@ public class App {
 
     private static void addRoutes(Javalin app) {
         app.get("/", RootController.main);
-        app.post("/urls", UrlController.createUrl);
-        app.get("/urls", UrlController.showUrls);
+
+        app.routes(() -> {
+            path("urls", () -> {
+                post(UrlController.createUrl);
+                get(UrlController.showAllUrls);
+                path("{id}", () -> {
+                    get(UrlController.showUrl);
+                });
+            });
+        });
     }
 
     private static TemplateEngine getTemplateEngine() {
