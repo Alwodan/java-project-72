@@ -17,6 +17,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 public class AppTest {
 
@@ -69,12 +71,15 @@ public class AppTest {
             assertThat(body).contains("Сайты");
         }
 
-        @Test
-        void testCreateValid() {
-            String newName = "https://www.youtube.com";
+        @ParameterizedTest
+        @CsvSource({
+                "https://www.youtube.com",
+                "https://www.youtube.com:8080"
+        })
+        void testCreateValid(String url) {
             HttpResponse<Empty> responsePost = Unirest
                     .post(baseUrl + "/urls")
-                    .field("url", newName)
+                    .field("url", url)
                     .asEmpty();
 
             assertThat(responsePost.getStatus()).isEqualTo(302);
@@ -86,13 +91,13 @@ public class AppTest {
             String body = response.getBody();
 
             assertThat(response.getStatus()).isEqualTo(200);
-            assertThat(body).contains(newName);
+            assertThat(body).contains(url);
             assertThat(body).contains("Страница успешно добавлена");
 
-            Url newUrl = new QUrl().name.equalTo(newName).findOne();
+            Url newUrl = new QUrl().name.equalTo(url).findOne();
 
             assertThat(newUrl).isNotNull();
-            assertThat(newUrl.getName()).isEqualTo(newName);
+            assertThat(newUrl.getName()).isEqualTo(url);
             assertThat(newUrl.getId()).isEqualTo(3);
 
             response = Unirest
@@ -101,12 +106,12 @@ public class AppTest {
             body = response.getBody();
 
             assertThat(response.getStatus()).isEqualTo(200);
-            assertThat(body).contains("Сайт " + newName);
+            assertThat(body).contains("Сайт " + url);
         }
 
         @Test
         void testCreateInvalid() {
-            String newName = "amongus";
+            String newName = "https://";
             HttpResponse<Empty> responsePost = Unirest
                     .post(baseUrl + "/urls")
                     .field("url", newName)
@@ -124,6 +129,25 @@ public class AppTest {
         }
 
         @Test
+        void testCreateExisting() {
+            String newName = "https://example.com";
+            HttpResponse<Empty> responsePost = Unirest
+                    .post(baseUrl + "/urls")
+                    .field("url", newName)
+                    .asEmpty();
+
+            assertThat(responsePost.getStatus()).isEqualTo(302);
+            assertThat(responsePost.getHeaders().getFirst("Location")).isEqualTo("/urls");
+
+            HttpResponse<String> response = Unirest
+                    .get(baseUrl + "/urls")
+                    .asString();
+
+            assertThat(response.getStatus()).isEqualTo(200);
+            assertThat(response.getBody()).contains("Страница уже существует");
+        }
+
+        @Test
         void testShowSpecific() {
             HttpResponse<String> response = Unirest
                     .get(baseUrl + "/urls/1")
@@ -132,6 +156,22 @@ public class AppTest {
 
             assertThat(response.getStatus()).isEqualTo(200);
             assertThat(body).contains("Сайт https://example.com");
+        }
+
+        @Test
+        void testShowNotFound() {
+            HttpResponse<String> response = Unirest
+                    .get(baseUrl + "/urls/100")
+                    .asString();
+            String body = response.getBody();
+
+            assertThat(response.getStatus()).isEqualTo(404);
+            assertThat(body).contains("Not Found");
+        }
+
+        @Test
+        void testCornerCases() {
+
         }
     }
 }
