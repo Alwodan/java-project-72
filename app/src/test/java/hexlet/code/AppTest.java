@@ -109,69 +109,41 @@ public class AppTest {
             assertThat(body).contains("Сайт " + url);
         }
 
-        @Test
-        void testCreateInvalid() {
-            String newName = "https://";
+        @ParameterizedTest
+        @CsvSource({
+            "https://, Некорректный URL, /",
+            "https://example.com, Страница уже существует, /urls",
+        })
+        void testCreateInvalid(String url, String flashMessage, String path) {
             HttpResponse<Empty> responsePost = Unirest
                     .post(baseUrl + "/urls")
-                    .field("url", newName)
+                    .field("url", url)
                     .asEmpty();
 
             assertThat(responsePost.getStatus()).isEqualTo(302);
-            assertThat(responsePost.getHeaders().getFirst("Location")).isEqualTo("/");
+            assertThat(responsePost.getHeaders().getFirst("Location")).isEqualTo(path);
 
             HttpResponse<String> response = Unirest
                     .get(baseUrl)
                     .asString();
 
             assertThat(response.getStatus()).isEqualTo(200);
-            assertThat(response.getBody()).contains("Некорректный URL");
+            assertThat(response.getBody()).contains(flashMessage);
         }
 
-        @Test
-        void testCreateExisting() {
-            String newName = "https://example.com";
-            HttpResponse<Empty> responsePost = Unirest
-                    .post(baseUrl + "/urls")
-                    .field("url", newName)
-                    .asEmpty();
-
-            assertThat(responsePost.getStatus()).isEqualTo(302);
-            assertThat(responsePost.getHeaders().getFirst("Location")).isEqualTo("/urls");
-
+        @ParameterizedTest
+        @CsvSource({
+            "1, 200, Сайт https://example.com",
+            "100, 404, Not Found",
+        })
+        void testShowSpecific(String id, String code, String expected) {
             HttpResponse<String> response = Unirest
-                    .get(baseUrl + "/urls")
-                    .asString();
-
-            assertThat(response.getStatus()).isEqualTo(200);
-            assertThat(response.getBody()).contains("Страница уже существует");
-        }
-
-        @Test
-        void testShowSpecific() {
-            HttpResponse<String> response = Unirest
-                    .get(baseUrl + "/urls/1")
+                    .get(baseUrl + "/urls/" + id)
                     .asString();
             String body = response.getBody();
 
-            assertThat(response.getStatus()).isEqualTo(200);
-            assertThat(body).contains("Сайт https://example.com");
-        }
-
-        @Test
-        void testShowNotFound() {
-            HttpResponse<String> response = Unirest
-                    .get(baseUrl + "/urls/100")
-                    .asString();
-            String body = response.getBody();
-
-            assertThat(response.getStatus()).isEqualTo(404);
-            assertThat(body).contains("Not Found");
-        }
-
-        @Test
-        void testCornerCases() {
-
+            assertThat(response.getStatus()).isEqualTo(Integer.parseInt(code));
+            assertThat(body).contains(expected);
         }
     }
 }
