@@ -1,8 +1,10 @@
 package hexlet.code.controllers;
 
+import hexlet.code.domain.UrlCheck;
 import hexlet.code.domain.query.QUrl;
 import io.ebean.PagedList;
 import io.javalin.http.Handler;
+
 import java.net.URL;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -10,6 +12,12 @@ import java.util.stream.Collectors;
 
 import hexlet.code.domain.Url;
 import io.javalin.http.NotFoundResponse;
+import kong.unirest.HttpResponse;
+import kong.unirest.Unirest;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 public class UrlController {
 
@@ -75,10 +83,10 @@ public class UrlController {
         ctx.render("urls/index.html");
     };
 
-    public static Handler showUrl = ctx -> {
+    public static Handler showUrlById = ctx -> {
         Long parsedId = ctx.pathParamAsClass("id", Long.class).getOrDefault(null);
 
-        Url url = new QUrl().id.equalTo(parsedId).findOne();
+        Url url = new QUrl().id.equalTo(parsedId).checks.fetch().orderBy().checks.createdAt.desc().findOne();
 
         if (url == null) {
             throw new NotFoundResponse();
@@ -86,5 +94,37 @@ public class UrlController {
 
         ctx.attribute("url", url);
         ctx.render("/urls/show.html");
+    };
+
+    public static Handler performCheck = ctx -> {
+        Long parsedId = ctx.pathParamAsClass("id", Long.class).getOrDefault(null);
+        Url url = new QUrl().id.equalTo(parsedId).findOne();
+        if (url == null) {
+            throw new NotFoundResponse();
+        }
+
+        try {
+            HttpResponse<String> response = Unirest.get(url.getName()).asString();
+            Document document = Jsoup.parse(response.getBody());
+
+            Element h1Raw = document.selectFirst("h1");
+            Element descriptionRaw = document.selectFirst("meta[name=description]");
+
+            int statusCode = response.getStatus();
+            String title = document.title();
+            String h1 = h1Raw == null ? "" : h1Raw.text();
+            String description = descriptionRaw == null ? "" : descriptionRaw.attr("content");
+
+            UrlCheck check = new UrlCheck(statusCode, title, h1, description, url);
+            url.getChecks().add(check);
+            url.save();
+
+            ctx.sessionAttribute("flash", "Страница успешно проверена");
+            ctx.sessionAttribute("flash-type", "success");
+        } catch (Exception e) {
+            ctx.sessionAttribute("flash", "Некорректный адрес");
+            ctx.sessionAttribute("flash-type", "danger");
+        }
+        ctx.redirect("/urls/" + parsedId);
     };
 }

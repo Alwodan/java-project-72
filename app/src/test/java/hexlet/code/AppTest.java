@@ -1,7 +1,9 @@
 package hexlet.code;
 
 import hexlet.code.domain.Url;
+import hexlet.code.domain.UrlCheck;
 import hexlet.code.domain.query.QUrl;
+import hexlet.code.domain.query.QUrlCheck;
 import kong.unirest.Empty;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -12,6 +14,8 @@ import io.ebean.Database;
 
 import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +23,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+
+import java.io.IOException;
 
 public class AppTest {
 
@@ -144,6 +150,58 @@ public class AppTest {
 
             assertThat(response.getStatus()).isEqualTo(Integer.parseInt(code));
             assertThat(body).contains(expected);
+        }
+    }
+
+    @Nested
+    class CheckTest {
+        private static MockWebServer server;
+
+        @AfterAll
+        public static void afterChecks() throws IOException {
+            server.shutdown();
+        }
+
+        @Test
+        void testValidCheck() throws IOException {
+            server = new MockWebServer();
+            server.enqueue(new MockResponse().setBody("<meta name=\"description\" content=\"DescriptionTest\">" +
+                    "<title>TitleTest</title>" +
+                    "<h1>H1Test</h1>"));
+            server.start();
+            String testUrl = server.url("/").toString().replaceAll("/$", "");
+
+            Unirest.post(baseUrl + "/urls")
+                    .field("url", testUrl)
+                    .asEmpty();
+
+            Url savedUrl = new QUrl().name.equalTo(testUrl).findOne();
+
+            assertThat(savedUrl).isNotNull();
+            assertThat(savedUrl.getName()).isEqualTo(testUrl);
+
+            HttpResponse<Empty> responsePost = Unirest
+                    .post(baseUrl + "/urls/3/checks")
+                    .asEmpty();
+
+            assertThat(responsePost.getStatus()).isEqualTo(302);
+            assertThat(responsePost.getHeaders().getFirst("Location")).isEqualTo("/urls/3");
+
+            UrlCheck savedCheck = new QUrlCheck().url.equalTo(savedUrl).findOne();
+
+            assertThat(savedCheck.getStatusCode()).isEqualTo(200);
+            assertThat(savedCheck.getDescription()).contains("DescriptionTest");
+            assertThat(savedCheck.getTitle()).contains("TitleTest");
+            assertThat(savedCheck.getH1()).contains("H1Test");
+        }
+
+        @Test
+        void testInvalidCheck() {
+            HttpResponse<Empty> responsePost = Unirest
+                    .post(baseUrl + "/urls/100/checks")
+                    .asEmpty();
+
+            assertThat(responsePost.getStatus()).isEqualTo(404);
         }
     }
 }

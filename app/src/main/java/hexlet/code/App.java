@@ -27,7 +27,8 @@ public class App {
                 post(UrlController.createUrl);
                 get(UrlController.showAllUrls);
                 path("{id}", () -> {
-                    get(UrlController.showUrl);
+                    get(UrlController.showUrlById);
+                    post("checks", UrlController.performCheck);
                 });
             });
         });
