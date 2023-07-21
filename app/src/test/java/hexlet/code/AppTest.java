@@ -26,7 +26,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.IOException;
 
-public class AppTest {
+public final class AppTest {
 
     private static Javalin app;
     private static String baseUrl;
