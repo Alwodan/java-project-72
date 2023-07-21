@@ -165,9 +165,9 @@ public class AppTest {
         @Test
         void testValidCheck() throws IOException {
             server = new MockWebServer();
-            server.enqueue(new MockResponse().setBody("<meta name=\"description\" content=\"DescriptionTest\">" +
-                    "<title>TitleTest</title>" +
-                    "<h1>H1Test</h1>"));
+            server.enqueue(new MockResponse().setBody("<meta name=\"description\" content=\"DescriptionTest\">"
+                    + "<title>TitleTest</title>"
+                    + "<h1>H1Test</h1>"));
             server.start();
             String testUrl = server.url("/").toString().replaceAll("/$", "");
 
