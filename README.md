@@ -6,6 +6,11 @@
 
 ### What is it?
 Simple little website for SEO testing. Written using Javalin and ORM Ebean.
-To start it locally, consider using *make run* from your console. Enjoy!
+To start it locally, please consider using *make run* from your console. Enjoy!
 
-Link to the deployed project -> https://hexlet-project-2u17.onrender.com/
+Or use this link to the deployed project -> https://hexlet-project-2u17.onrender.com/
+
+## Some screenshots
+![main page](https://i.imgur.com/4sjKmLc.png)
+![url page](https://i.imgur.com/VKJt9Uf.png)
+![urls list](https://i.imgur.com/rXlChhl.png)
