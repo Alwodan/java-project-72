@@ -4,4 +4,8 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/f6f4ce9dcd3f533e8b9f/maintainability)](https://codeclimate.com/github/Alwodan/java-project-72/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/f6f4ce9dcd3f533e8b9f/test_coverage)](https://codeclimate.com/github/Alwodan/java-project-72/test_coverage)
 
-Link to deployed project -> https://hexlet-project-2u17.onrender.com/
+### What is it?
+Simple little website for SEO testing. Written using Javalin and ORM Ebean.
+To start it locally, consider using *make run* from your console. Enjoy!
+
+Link to the deployed project -> https://hexlet-project-2u17.onrender.com/
